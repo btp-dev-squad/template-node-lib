@@ -1,0 +1,19 @@
+{
+  "name": "template-node-lib",
+  "version": "1.0.0",
+  "description": "Aarini Starter template to building Node JS Packages",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "starter",
+    "template",
+    "node",
+    "js",
+    "npm",
+    "package"
+  ],
+  "author": "Arun Krishnamoorthy",
+  "license": "ISC"
+}
