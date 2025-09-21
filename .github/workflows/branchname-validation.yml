@@ -23,14 +23,14 @@ jobs:
           else
             BRANCH_NAME="${{ github.ref_name }}"
           fi
-          
+
           echo "🔍 Validating branch name: $BRANCH_NAME"
 
           if [[ "$BRANCH_NAME" = "main" ]] || [[ "$BRANCH_NAME" = "develop" ]] || [[ "$BRANCH_NAME" = "staging" ]]; then
             echo "✅ Main/workflow branch detected ($BRANCH_NAME), skipping validation"
             exit 0
           fi
-          
+
           # Check if branch follows naming convention
           if [[ "$BRANCH_NAME" =~ ^feature\/.+ ]] || \
              [[ "$BRANCH_NAME" =~ ^release\/.+ ]] || \

@@ -1,4 +1,4 @@
-name: Auto Release 
+name: Auto Release
 on:
   push:
     branches: [main]
@@ -21,29 +21,29 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm' 
+          node-version-file: ".nvmrc"
+          cache: "npm"
           
       - name: Auto Release
         run: |
           # Configure git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           # Install required packages
           npm install -g conventional-changelog-cli conventional-changelog-angular conventional-recommended-bump
-          
+
           # Ensure we have the latest commit by explicitly fetching
           git fetch origin main
           git reset --hard origin/main
-          
+
           # Debug: Show current commit info
           echo "=== Current Commit Info ==="
           echo "Current HEAD: $(git rev-parse HEAD)"
           echo "Current HEAD short: $(git rev-parse --short HEAD)"
           echo "Latest commit message: $(git log -1 --pretty=format:'%s')"
           echo "Latest commit hash: $(git log -1 --pretty=format:'%H')"
-          
+
           # Check if there are commits since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           echo "Last tag: $LAST_TAG"
@@ -55,14 +55,15 @@ jobs:
             COMMITS_SINCE_LAST=$(git rev-list --count ${LAST_TAG}..HEAD)
             COMMIT_RANGE="${LAST_TAG}..HEAD"
           fi
-          
+
           echo "Commits since last: $COMMITS_SINCE_LAST"
           echo "Commit range: $COMMIT_RANGE"
-          
+
           # Debug: Show commits in range
           echo "=== Commits in range ==="
           git log $COMMIT_RANGE --pretty=format:"%h %s" --no-merges
-          
+
+
           # Only create release if there are new commits
           if [ "$COMMITS_SINCE_LAST" -gt 0 ]; then
             # Generate proper categorized changelog with reverse chronological order
