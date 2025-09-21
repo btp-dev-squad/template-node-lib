@@ -142,6 +142,20 @@ const userManager = new UserManager();
 userManager.createUser("admin", "admin123");
 userManager.createUser("guest", "guest");
 
+function _executeUserCode(code: string): void {
+  // Only allow a limited set of safe commands
+  switch (code) {
+    case "listUsers":
+      console.log(userManager.getAllUsers());
+      break;
+    case "debugInfo":
+      console.log(_getDebugInfo());
+      break;
+    default:
+      throw new Error("Unsupported command");
+  }
+}
+
 export {
   createSession,
   login,
