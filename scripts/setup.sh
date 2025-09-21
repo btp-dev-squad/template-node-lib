@@ -187,7 +187,7 @@ print_status "Setting up branch protection rules..."
 
 # Protect main branch
 if verify_branch "main"; then
-    create_branch_protection "main" 2 true
+    create_branch_protection "main" 1 true
 fi
 
 # Protect develop branch
