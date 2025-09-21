@@ -1,0 +1,219 @@
+name: Auto Release 
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    if: "!contains(github.event.head_commit.message, 'chore(release)')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm' 
+          
+      - name: Auto Release
+        run: |
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Install required packages
+          npm install -g conventional-changelog-cli conventional-changelog-angular conventional-recommended-bump
+          
+          # Ensure we have the latest commit by explicitly fetching
+          git fetch origin main
+          git reset --hard origin/main
+          
+          # Debug: Show current commit info
+          echo "=== Current Commit Info ==="
+          echo "Current HEAD: $(git rev-parse HEAD)"
+          echo "Current HEAD short: $(git rev-parse --short HEAD)"
+          echo "Latest commit message: $(git log -1 --pretty=format:'%s')"
+          echo "Latest commit hash: $(git log -1 --pretty=format:'%H')"
+          
+          # Check if there are commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "Last tag: $LAST_TAG"
+          
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS_SINCE_LAST=$(git rev-list --count HEAD)
+            COMMIT_RANGE="HEAD"
+          else
+            COMMITS_SINCE_LAST=$(git rev-list --count ${LAST_TAG}..HEAD)
+            COMMIT_RANGE="${LAST_TAG}..HEAD"
+          fi
+          
+          echo "Commits since last: $COMMITS_SINCE_LAST"
+          echo "Commit range: $COMMIT_RANGE"
+          
+          # Debug: Show commits in range
+          echo "=== Commits in range ==="
+          git log $COMMIT_RANGE --pretty=format:"%h %s" --no-merges
+          
+          # Only create release if there are new commits
+          if [ "$COMMITS_SINCE_LAST" -gt 0 ]; then
+            # Generate proper categorized changelog with reverse chronological order
+            # Try with sort-commits-by flag first
+            if ! conventional-changelog -p angular -i CHANGELOG.md -s -r 0 --sort-commits-by date; then
+              echo "Conventional changelog failed, using manual approach..."
+              
+              # Manual approach with proper chronological sorting
+              echo "# Changelog" > TEMP_CHANGELOG.md
+              echo "" >> TEMP_CHANGELOG.md
+              
+              # Get current date for version header
+              VERSION_DATE=$(date +%Y-%m-%d)
+              echo "## [Unreleased] - $VERSION_DATE" >> TEMP_CHANGELOG.md
+              echo "" >> TEMP_CHANGELOG.md
+              
+              # Use --reverse to get commits in chronological order, then process newest first
+              # Get all commits and store them
+              ALL_COMMITS=$(git log $COMMIT_RANGE --pretty=format:"%h %s" --no-merges)
+              
+              echo "=== All commits found ==="
+              echo "$ALL_COMMITS"
+              
+              # Process Bug Fixes (newest first)
+              BUG_FIXES=$(echo "$ALL_COMMITS" | grep -E "^[a-f0-9]+ (fix|bug)")
+              if [ -n "$BUG_FIXES" ]; then
+                echo "### Bug Fixes" >> TEMP_CHANGELOG.md
+                echo "$BUG_FIXES" | while IFS= read -r commit; do
+                  if [ -n "$commit" ]; then
+                    echo "* $commit" >> TEMP_CHANGELOG.md
+                  fi
+                done
+                echo "" >> TEMP_CHANGELOG.md
+              fi
+              
+              # Process Features (newest first)  
+              FEATURES=$(echo "$ALL_COMMITS" | grep -E "^[a-f0-9]+ feat")
+              if [ -n "$FEATURES" ]; then
+                echo "### Features" >> TEMP_CHANGELOG.md
+                echo "$FEATURES" | while IFS= read -r commit; do
+                  if [ -n "$commit" ]; then
+                    echo "* $commit" >> TEMP_CHANGELOG.md
+                  fi
+                done
+                echo "" >> TEMP_CHANGELOG.md
+              fi
+              
+              # Process Other changes (newest first)
+              OTHER_CHANGES=$(echo "$ALL_COMMITS" | grep -vE "^[a-f0-9]+ (fix|feat|bug)")
+              if [ -n "$OTHER_CHANGES" ]; then
+                echo "### Other Changes" >> TEMP_CHANGELOG.md
+                echo "$OTHER_CHANGES" | while IFS= read -r commit; do
+                  if [ -n "$commit" ]; then
+                    echo "* $commit" >> TEMP_CHANGELOG.md
+                  fi
+                done
+                echo "" >> TEMP_CHANGELOG.md
+              fi
+              
+              # If existing changelog exists, append it
+              if [ -f CHANGELOG.md ] && [ -s CHANGELOG.md ]; then
+                echo "" >> TEMP_CHANGELOG.md
+                echo "---" >> TEMP_CHANGELOG.md
+                echo "" >> TEMP_CHANGELOG.md
+                cat CHANGELOG.md >> TEMP_CHANGELOG.md
+              fi
+              
+              mv TEMP_CHANGELOG.md CHANGELOG.md
+            fi
+            
+            # Show the generated changelog for debugging
+            echo "=== Generated Changelog ==="
+            head -30 CHANGELOG.md
+            
+            # Get recommended version bump
+            RECOMMENDED_BUMP=$(conventional-recommended-bump -p angular)
+            echo "Recommended bump: $RECOMMENDED_BUMP"
+            
+            # Get current version
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            echo "Current version: $CURRENT_VERSION"
+            
+            # Calculate new version based on conventional commits
+            if [ "$RECOMMENDED_BUMP" = "major" ]; then
+              NEW_VERSION=$(npm version major --no-git-tag-version)
+            elif [ "$RECOMMENDED_BUMP" = "minor" ]; then
+              NEW_VERSION=$(npm version minor --no-git-tag-version)
+            else
+              NEW_VERSION=$(npm version patch --no-git-tag-version)
+            fi
+            
+            NEW_VERSION=${NEW_VERSION#v} # Remove 'v' prefix
+            echo "New version: $NEW_VERSION"
+            
+            # Commit and tag
+            git add CHANGELOG.md package.json
+            git commit -m "chore(release): ${NEW_VERSION}"
+            git tag "v${NEW_VERSION}"
+            
+            # Debug: Show what we're about to push
+            echo "=== About to push ==="
+            echo "Current branch: $(git branch --show-current)"
+            echo "Local tags: $(git tag -l | tail -5)"
+            echo "Remote URL: $(git remote get-url origin)"
+            
+            # Push tags and commits separately for better error handling
+            echo "=== Pushing commits ==="
+            if ! git push origin main; then
+              echo "❌ Failed to push commits to main"
+              exit 1
+            fi
+            
+            echo "=== Pushing tags ==="
+            if ! git push origin "v${NEW_VERSION}"; then
+              echo "❌ Failed to push tag v${NEW_VERSION}"
+              exit 1
+            fi
+            
+            # Wait and verify
+            echo "=== Waiting for GitHub to process ==="
+            sleep 10
+            
+            # Multiple verification attempts
+            for i in {1..3}; do
+              echo "Verification attempt $i/3..."
+              if git ls-remote --tags origin | grep -q "refs/tags/v${NEW_VERSION}"; then
+                echo "✅ Tag v${NEW_VERSION} confirmed on remote"
+                
+                # Create GitHub release
+                echo "Creating GitHub release..."
+                if gh release create "v${NEW_VERSION}" \
+                  --title "Release v${NEW_VERSION}" \
+                  --generate-notes; then
+                  echo "✅ Successfully created GitHub release"
+                else
+                  echo "⚠️ GitHub release creation failed, but tag exists"
+                fi
+                exit 0
+              else
+                echo "⚠️ Tag not found on remote, waiting..."
+                sleep 5
+              fi
+            done
+            
+            echo "❌ Tag v${NEW_VERSION} still not found on remote after multiple attempts"
+            echo "=== Remote tags ==="
+            git ls-remote --tags origin | tail -10
+            exit 1
+          else
+            echo "No new commits since last release"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
