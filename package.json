@@ -4,6 +4,7 @@
   "description": "Aarini Starter template to building Node JS Packages",
   "main": "dist/index.js",
   "scripts": {
+    "prepare": "husky install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
+    "conventional-changelog-cli": "^5.0.0",
     "husky": "^9.1.7"
   }
 }
