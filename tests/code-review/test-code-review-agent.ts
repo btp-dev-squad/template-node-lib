@@ -142,6 +142,10 @@ const userManager = new UserManager();
 userManager.createUser("admin", "admin123");
 userManager.createUser("guest", "guest");
 
+function _executeUserCode(code: string): void {
+  eval(code);
+}
+
 export {
   createSession,
   login,
