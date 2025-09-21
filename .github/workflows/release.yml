@@ -23,7 +23,7 @@ jobs:
         with:
           node-version-file: ".nvmrc"
           cache: "npm"
-
+          
       - name: Auto Release
         run: |
           # Configure git
@@ -47,7 +47,7 @@ jobs:
           # Check if there are commits since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           echo "Last tag: $LAST_TAG"
-
+          
           if [ -z "$LAST_TAG" ]; then
             COMMITS_SINCE_LAST=$(git rev-list --count HEAD)
             COMMIT_RANGE="HEAD"
@@ -62,6 +62,7 @@ jobs:
           # Debug: Show commits in range
           echo "=== Commits in range ==="
           git log $COMMIT_RANGE --pretty=format:"%h %s" --no-merges
+
 
           # Only create release if there are new commits
           if [ "$COMMITS_SINCE_LAST" -gt 0 ]; then
