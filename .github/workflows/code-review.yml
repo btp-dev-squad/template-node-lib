@@ -1,0 +1,34 @@
+name: Github Co-pilot Code review 
+on: 
+  pull_request:
+    types: [opened,synchronize]
+
+jobs:
+  review: 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code 
+        uses: actions/checkout@v4
+
+      - name: Setup Co-pilot CLI
+        run: |
+          npm install -g @githubnext/copilot-cli
+
+      - name: Run Copilot review 
+        run: |
+          PROMPT=$'Review the code in this PR.\nFocus only on security vulnerabilities, performance optimizations,\nand missing error handling.'
+          REVIEW=$(copilot suggest "$PROMPT")
+          echo "$REVIEW" > review.md
+
+      - name: Post Review Command 
+        uses: actions/github-scripts@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const review = fs.readFileSync('review.md','utf-8');
+            github.rest.issues.createComment({
+              issue_number: context.issue_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: review
+            })
