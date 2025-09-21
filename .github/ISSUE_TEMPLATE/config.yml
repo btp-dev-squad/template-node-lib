@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 General Discussion
+    url: https://github.com/btp-dev-squad/template-node-lib/discussions
+    about: For questions, ideas, and general discussion
+  - name: 📞 Support
+    url: https://aarini.com/support
+    about: For general support and help

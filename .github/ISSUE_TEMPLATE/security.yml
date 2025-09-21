@@ -1,0 +1,14 @@
+name: 🔒 Security Vulnerability
+description: Report a security vulnerability (Private reporting recommended)
+title: "[SECURITY] "
+labels: ["security", "needs-triage"]
+assignees: ["arun.krishnamoorthy"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **SECURITY NOTICE**
+        For sensitive security issues, please email arun.krishnamoorthy@aarini.com directly instead of creating a public issue.
+        
+        Only use this template for security improvements or non-sensitive security-related discussions.

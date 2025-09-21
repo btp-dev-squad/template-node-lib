@@ -1,0 +1,84 @@
+name: 🚨 Hotfix Request
+description: Critical production issue requiring immediate attention
+title: "[HOTFIX] "
+labels: ["hotfix", "critical", "priority-high"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **HOTFIX REQUEST** ⚠️
+        This template is for critical production issues that require immediate attention and deployment outside the normal release cycle.
+
+  - type: checkboxes
+    id: severity_check
+    attributes:
+      label: Severity Confirmation
+      description: Please confirm this meets hotfix criteria
+      options:
+        - label: This is a critical production issue affecting users
+          required: true
+        - label: This cannot wait for the next scheduled release
+          required: true
+        - label: I have notified the team via appropriate channels (Slack, email, etc.)
+          required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact Level
+      description: What is the impact of this issue?
+      options:
+        - System completely down
+        - Major functionality broken for all users
+        - Security vulnerability
+        - Data integrity issue
+        - Major functionality broken for some users
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Detailed description of the critical issue
+      placeholder: Describe the critical issue...
+    validations:
+      required: true
+
+  - type: textarea
+    id: business_impact
+    attributes:
+      label: Business Impact
+      description: How is this affecting the business or users?
+      placeholder: Describe the business impact...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_fix
+    attributes:
+      label: Proposed Fix
+      description: What is the proposed solution?
+      placeholder: Describe the proposed fix...
+    validations:
+      required: true
+
+  - type: textarea
+    id: testing_plan
+    attributes:
+      label: Testing Plan
+      description: How will this fix be tested before deployment?
+      placeholder: Describe testing approach...
+    validations:
+      required: true
+
+  - type: textarea
+    id: rollback_plan
+    attributes:
+      label: Rollback Plan
+      description: What's the rollback strategy if this fix causes issues?
+      placeholder: Describe rollback plan...
+    validations:
+      required: true
