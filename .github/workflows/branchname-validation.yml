@@ -1,0 +1,55 @@
+name: Branch Naming Validation
+on:
+  push:
+    branches-ignore:
+      - main
+      - develop
+      - staging
+  pull_request:
+    branches:
+      - main
+      - develop
+      - staging
+
+jobs:
+  validate-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch naming convention
+        run: |
+          # Extract branch name
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BRANCH_NAME="${{ github.head_ref }}"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
+          
+          echo "🔍 Validating branch name: $BRANCH_NAME"
+          
+          # Check if branch follows naming convention
+          if [[ "$BRANCH_NAME" =~ ^feature\/.+ ]] || \
+             [[ "$BRANCH_NAME" =~ ^release\/.+ ]] || \
+             [[ "$BRANCH_NAME" =~ ^hotfix\/.+ ]] || \
+             [[ "$BRANCH_NAME" =~ ^bugfix\/.+ ]]; then
+            echo "✅ Branch name '$BRANCH_NAME' follows naming conventions"
+          else
+            echo "❌ Branch name '$BRANCH_NAME' violates naming conventions"
+            echo ""
+            echo "📋 Allowed patterns:"
+            echo "• feature/* - New feature development"
+            echo "• release/* - Release preparation and final testing"
+            echo "• hotfix/* - Critical production fixes"
+            echo "• bugfix/* - Non-critical bug fixes"
+            echo ""
+            echo "✅ Valid examples:"
+            echo "• feature/user-authentication"
+            echo "• bugfix/login-validation"
+            echo "• hotfix/security-patch"
+            echo "• release/v1.2.0"
+            echo ""
+            echo "🔧 To fix:"
+            echo "1. Rename your branch: git branch -m $BRANCH_NAME <new-name>"
+            echo "2. Force push: git push origin <new-name> --force-with-lease"
+            echo "3. Update your PR to point to the new branch"
+            exit 1
+          fi
