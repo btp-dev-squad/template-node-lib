@@ -1,34 +1,79 @@
-name: Github Co-pilot Code review 
+name: GitHub Copilot Code Review
 on: 
   pull_request:
-    types: [opened,synchronize]
+    types: [opened, synchronize]
 
 jobs:
   review: 
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout Code 
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for diff
 
-      - name: Setup Co-pilot CLI
+      - name: Setup GitHub CLI with Copilot
         run: |
-          npm install -g @githubnext/copilot-cli
+          gh extension install github/gh-copilot
 
-      - name: Run Copilot review 
+      - name: Authenticate GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PROMPT=$'Review the code in this PR.\nFocus only on security vulnerabilities, performance optimizations,\nand missing error handling.'
-          REVIEW=$(copilot suggest "$PROMPT")
-          echo "$REVIEW" > review.md
+          echo "$GITHUB_TOKEN" | gh auth login --with-token
 
-      - name: Post Review Command 
+      - name: Get PR diff and generate review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the PR diff
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          
+          # Get changed files
+          CHANGED_FILES=$(gh pr diff $PR_NUMBER --name-only)
+          
+          echo "## 🤖 Copilot Code Review" > review.md
+          echo "" >> review.md
+          
+          # For each changed file, ask Copilot for review
+          for file in $CHANGED_FILES; do
+            if [[ -f "$file" ]]; then
+              echo "### 📄 $file" >> review.md
+              
+              # Get file content and ask Copilot to review
+              PROMPT="Review this code for security vulnerabilities, performance issues, and missing error handling: $(cat $file)"
+              REVIEW=$(gh copilot suggest "$PROMPT" 2>/dev/null || echo "Unable to review this file")
+              
+              echo "$REVIEW" >> review.md
+              echo "" >> review.md
+            fi
+          done
+
+      - name: Post Review Comment
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const review = fs.readFileSync('review.md','utf-8');
-            github.rest.issues.createComment({
-              issue_number: context.issue_number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: review
-            })
+            
+            try {
+              const review = fs.readFileSync('review.md', 'utf-8');
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: review
+              });
+            } catch (error) {
+              console.error('Error posting review:', error);
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '## 🤖 Copilot Code Review\n\nUnable to generate review at this time. Please try again later.'
+              });
+            }
