@@ -1,0 +1,71 @@
+name: 📚 Documentation
+description: Report missing, unclear, or incorrect documentation
+title: "[DOCS] "
+labels: ["documentation", "needs-triage"]
+assignees: []
+
+body:
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation needs attention?
+      options:
+        - API Documentation
+        - User Guide
+        - Developer Documentation
+        - README
+        - Code Comments
+        - Configuration Guide
+        - Troubleshooting
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue Type
+      description: What's wrong with the documentation?
+      options:
+        - Missing documentation
+        - Incorrect information
+        - Unclear/confusing content
+        - Outdated content
+        - Broken links
+        - Formatting issues
+        - Translation needed
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: Documentation Location
+      description: Where is this documentation located (or where should it be)?
+      placeholder: URL, file path, or section name...
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the documentation issue
+      placeholder: What's wrong or missing?...
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Improvement
+      description: How should this be improved?
+      placeholder: What would you like to see documented or changed?...
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context or examples
+      placeholder: Add any other context here...
