@@ -29,3 +29,5 @@ After the executables permissions are set, then run the script to add branch pro
 ```sh
 ./scripts/setup.sh <repo_org> <repo_name> <github_token>
 ```
+
+Testing commit config
