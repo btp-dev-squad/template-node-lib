@@ -1,1 +1,3 @@
-console.log("the node package is executed...")
+console.log("the node package is executed...");
+
+var test = "undeclared usage";
