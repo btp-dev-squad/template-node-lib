@@ -146,7 +146,7 @@ class BranchProtectionSetup {
 
   async setupRepository(owner, repo, config = {}) {
     const {
-      branches = { main: 2, develop: 1, staging: 1 },
+      branches = { main: 1, develop: 1, staging: 1 },
       enforceAdmins = true,
       enableSecurity = true
     } = config;
